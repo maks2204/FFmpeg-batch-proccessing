@@ -45,10 +45,10 @@ impl Encoder {
 
 
     pub fn process(&self) {
-        for i in &self.files {
-            println!("{:?}", i);
-        }
-        print!("{:?}", self.videos_count);
+        // for i in &self.files {
+        //     println!("{:?}", i);
+        // }
+        // print!("{:?}", self.videos_count);
         self.create_folder_finish();
 
         let mut curr_ind;
@@ -105,14 +105,17 @@ impl Encoder {
         let mut output_file = self.path.clone();
         output_file.push("finish");
         output_file.push(curr_file.file_name().unwrap());
-
         //let ffmpeg_path=self.ffmpeg_path.clone();
         let ffmpeg_path = self.ffmpeg_path.clone();
         
 
         thread::spawn(move || {
             let mut find = false;
-            
+
+            let temp = curr_file.clone();
+            let filename_progress = temp.file_name().unwrap();
+
+
 
             FfmpegCommand::new_with_path(ffmpeg_path)
             .arg("-i")
@@ -127,7 +130,7 @@ impl Encoder {
                 match event {
                     FfmpegEvent::Progress(progress) => {
                     pb.set_position(progress.frame as u64);
-                    pb.set_message(format!("Thread ID:{} FPS:{}", id, progress.fps))
+                    pb.set_message(format!("Thread ID:{} FPS:{} File Name: {}", id, progress.fps, filename_progress.to_str().unwrap()))
                     }
 
                     FfmpegEvent::Log(_level, msg) => {
@@ -137,7 +140,7 @@ impl Encoder {
                                     pb.set_length(res_regex.parse::<u64>().unwrap());
                             }
                         }
-                    eprintln!("[ffmpeg] {}", msg); // <- granular log message from stderr
+                    //eprintln!("[ffmpeg] {}", msg); // <- granular log message from stderr
                     }
                     _ => {}
                 }

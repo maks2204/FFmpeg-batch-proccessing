@@ -9,7 +9,7 @@ mod json_structs;
 fn main() {
 
     let config: Config = Config::new();
-    println!("Config {:?}", config.ffmpeg_path);
+    //println!("Config {:?}", config.ffmpeg_path);
 
 
     //let ffmpeg_path = fs::read_to_string("ffmpeg.txt").expect("ERROR READ ffmpeg.txt with PATH to ffmpeg.exe");
