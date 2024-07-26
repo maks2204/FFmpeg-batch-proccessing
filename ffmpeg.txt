@@ -1,1 +1,0 @@
-Z:\ffmpeg\ffmpeg-n6.1-latest-win64-gpl-6.1\bin\ffmpeg.exe
