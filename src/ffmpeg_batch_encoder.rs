@@ -9,7 +9,7 @@ use regex::Regex;
 use ffmpeg_sidecar::{command::FfmpegCommand, event::FfmpegEvent};
 
 
-static MAXTHREAD: i32 = 5;
+//static MAXTHREAD: i32 = 5;
 
 pub struct Encoder {
     ffmpeg_path: PathBuf,
@@ -20,11 +20,12 @@ pub struct Encoder {
     sty: ProgressStyle,
     rx: Receiver<i32>,
     tx: Sender<i32>,
-    command_str: String
+    command_str: String,
+    max_threads: i32
 }
 
 impl Encoder {
-    pub fn new(path: PathBuf, ffmpeg_path: PathBuf) -> Self {
+    pub fn new(path: PathBuf, ffmpeg_path: PathBuf, ffmpeg_commands: String, max_threads: i32) -> Self {
         let files = Encoder::scan_folder(&path);
         let videos_count = i32::try_from(files.len()).unwrap();
         let (tx, rx): (Sender<i32>, Receiver<i32>) = mpsc::channel();
@@ -37,7 +38,8 @@ impl Encoder {
             sty: ProgressStyle::with_template("[{elapsed_precise}] {bar:40.cyan/blue} {pos:>7}/{len:7} {msg}",).unwrap().progress_chars("##-"),
             rx,
             tx,
-            command_str: "-c:a copy -c:v hevc_nvenc -preset p5 -profile:v main10 -bf 4 -b_ref_mode 1 -nonref_p 1 -rc vbr -cq 23 -qmin 1 -qmax 99 -pix_fmt p010le -spatial-aq 1 -aq-strength 8 -temporal-aq 1 -maxrate 20M".to_string()
+            command_str: ffmpeg_commands,
+            max_threads: max_threads
         }
     }
 
@@ -50,10 +52,10 @@ impl Encoder {
         self.create_folder_finish();
 
         let mut curr_ind;
-        if MAXTHREAD >= self.videos_count {
+        if self.max_threads >= self.videos_count {
             curr_ind = self.videos_count
         } else {
-            curr_ind = MAXTHREAD;
+            curr_ind = self.max_threads;
         }
 
         self.initial_spawn_threads();
@@ -82,10 +84,10 @@ impl Encoder {
 
     fn initial_spawn_threads(&self) {
         let initial_threads: i32;
-        if MAXTHREAD > self.videos_count {
+        if self.max_threads > self.videos_count {
             initial_threads = self.videos_count;
         } else {
-            initial_threads = MAXTHREAD;
+            initial_threads = self.max_threads;
         }
         for id in 0..initial_threads {
             self.spawn(id);
@@ -135,7 +137,7 @@ impl Encoder {
                                     pb.set_length(res_regex.parse::<u64>().unwrap());
                             }
                         }
-                    //eprintln!("[ffmpeg] {}", msg); // <- granular log message from stderr
+                    eprintln!("[ffmpeg] {}", msg); // <- granular log message from stderr
                     }
                     _ => {}
                 }
